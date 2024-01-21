@@ -12,6 +12,7 @@ import { DeviceModel } from "./device";
 import { BillModel } from "./bill";
 import { OptionsTypeModel } from "./optionsType";
 import { ReportProblemModel } from "./reportProblem";
+import { ElectricsModel } from "./electric";
 
 export default (connection: any) => {
   return {
@@ -27,5 +28,6 @@ export default (connection: any) => {
     bill: BillModel(connection),
     optionsType: OptionsTypeModel(connection),
     reportProblem: ReportProblemModel(connection),
+    electrics: ElectricsModel(connection),
   };
 };

@@ -16,12 +16,17 @@ const energyRoute = express.Router();
 energyRoute.route("/devices").get(EnergyController.getAllDevice);
 energyRoute.route("/device/data/:id").get(EnergyController.getDeviceData);
 energyRoute.route("/device/latestData/:id").get(EnergyController.getLatestDeviceData);
-energyRoute.route("/device/currentDayDataPerHour/:id/:startTime/:endTime")
+energyRoute.route("/device/currentDayDataPerHour/:id")
                     .get(EnergyController.getCurrentDayDataPerHour);
 
-energyRoute.route("/device/currentMonDataPerDay/:id/:startTime/:endTime")
+energyRoute.route("/device/currentMonDataPerDay/:id")
                     .get(EnergyController.getCurrentMonDataPerDay);
 
+energyRoute.route("/device/currentData/:id")
+                    .get(EnergyController.getCurrentData);
+
+energyRoute.route("/devices/backUpData/:startTime/:endTime")
+                    .get(EnergyController.backUpDataPerDay);                  
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
 
 // Login

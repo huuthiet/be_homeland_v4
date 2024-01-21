@@ -1,6 +1,8 @@
 export default agenda => {
     // create order
     agenda.define('ChangeRoomStatus', async (job, done) => {
+
+        console.log("Start AGENDA room");
         try {
             //Init models
             const {room: roomModel} = global.mongoModel;

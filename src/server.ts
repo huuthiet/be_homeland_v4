@@ -13,6 +13,8 @@ import "reflect-metadata";
 import * as swaggerJSDoc from "swagger-jsdoc";
 import * as swaggerUi from "swagger-ui-express";
 
+
+// import "./scheduleDataEnergy";
 import * as logrotate from "logrotator";
 import initGlobalVariables from "./constants";
 import Agenda from "./services/agenda";
@@ -188,6 +190,8 @@ dotenv.config();
   // Serve agenda dashboard
   app.use("/agenda/dashboard", AgendashInstance(agenda));
 
+//--------------------------------------------------------------
+
   /*///////////////////////////////////////////////////////////////
       /////               END AGENDA DASHBOARD CONFIG             /////
       ///////////////////////////////////////////////////////////////*/
@@ -272,6 +276,9 @@ dotenv.config();
       HttpResponse.returnInternalServerResponseWithMessage(res, err.message);
     }
   });
+
+
+
 
   // Create http server with express
   const httpServer = http.createServer(app);
