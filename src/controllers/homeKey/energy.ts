@@ -239,10 +239,12 @@ export default class EnergyController {
 
       // Đặt thời điểm về 0h00p00s
       currentDate.setHours(7, 0, 0, 0);
+      // currentDate.setHours(-14, 0, 0, 0);
       const startOfDayCurrent = new Date(currentDate);
 
       // Đặt thời điểm về 23h59p59.999s
       currentDate.setHours(30, 59, 59, 999);
+      // currentDate.setHours(10, 59, 59, 999);
       const endOfDayCurrent = new Date(currentDate);
       
       console.log("startOfDayCurrent", startOfDayCurrent);
@@ -291,14 +293,50 @@ export default class EnergyController {
       });
       
       console.log('Data with nulls:', dataWithNulls);
-                                                                            
+
+      const kWhData = [];
+      let lastValue = 0;
+      let activePowerPerHour = [];
+      let electricPerHour = [];
+      let totalkWhDay = -1;
+
+      if (dataBeforeDay !== null) {
+        lastValue = dataBeforeDay.Total_kWh;
+      } else {
+        lastValue = 0;
+      }
 
 
-      // console.log("dataBeforeDay", dataBeforeDay);
+      activePowerPerHour = dataWithNulls.map(item => (item !== null ? item.Active_Power : null));
+      electricPerHour = dataWithNulls.map(item => (item !== null ? item.Current : null));
+      
+  
+      const kWhArr = dataWithNulls.map(item => (item !== null ? item.Total_kWh : null));
+      for (let i = 0; i < kWhArr.length; i++) {
+        if (kWhArr[i] === null) {
+          kWhData.push(null);
+        } else {
+          let result = kWhArr[i] - lastValue;
+          // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
+          if (result < 0) {
+            kWhData.push(null);
+            lastValue = kWhArr[i];
+          } else {
+            kWhData.push(result);
+            lastValue = kWhArr[i];
+          }
+        }
+      }
+
+      totalkWhDay = kWhData.reduce((acc, curr) => acc + curr, 0);
 
       const resultData= {
-        dataInDay: dataWithNulls,
+        totalkWhDay: totalkWhDay,
+        kWhData: kWhData,
         dataBeforeDay: dataBeforeDay,
+        dataInDay: dataWithNulls,
+        activePowerPerHour: activePowerPerHour,
+        electricPerHour: electricPerHour,
       };
       return HttpResponse.returnSuccessResponse(res, resultData);
     } catch (e) {
@@ -696,10 +734,47 @@ export default class EnergyController {
                                                                             .exec();
       console.log("dataBeforeMon", dataBeforeMon);
 
+      const kWhData = [];
+      let lastValue = 0;
+      let totalkWhMon = -1;
+
+
+
+        if (dataBeforeMon !== null) {
+          lastValue = dataBeforeMon.Total_kWh;
+        } else {
+          lastValue = 0;
+        }
+
+        
+    
+        const kWhArr = resultArray.map(item => (item !== null ? item.Total_kWh : null));
+        for (let i = 0; i < kWhArr.length; i++) {
+          if (kWhArr[i] === null) {
+            kWhData.push(null);
+          } else {
+            let result = kWhArr[i] - lastValue;
+            // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
+            if (result < 0) {
+              kWhData.push(null);
+              lastValue = kWhArr[i];
+            } else {
+              kWhData.push(result);
+              lastValue = kWhArr[i];
+            }
+          }
+        }
+
+      totalkWhMon = kWhData.reduce((acc, curr) => acc + curr, 0);
+
+
       
       const resultData={
-        dataInMon: resultArray,
+        totalkWhMon: totalkWhMon, 
         dataBeforeMon: dataBeforeMon,
+        kWhData: kWhData,
+        dataInMon: resultArray,
+        
       };
       return HttpResponse.returnSuccessResponse(res, resultData);
     } catch (e) {
