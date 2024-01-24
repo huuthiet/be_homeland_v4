@@ -224,126 +224,6 @@ export default class EnergyController {
     }
   }
 
-  static async getCurrentDayDataPerHour(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<any> {
-    const deviceId = req.params.id;
-    try {
-      const { electrics: ElectricsModel } = global.mongoModel;
-
-      const currentDate = new Date();
-      console.log("currentDate", currentDate);
-      console.log("currentDate", typeof(currentDate));
-
-      // Đặt thời điểm về 0h00p00s
-      currentDate.setHours(7, 0, 0, 0);
-      // currentDate.setHours(-14, 0, 0, 0);
-      const startOfDayCurrent = new Date(currentDate);
-
-      // Đặt thời điểm về 23h59p59.999s
-      currentDate.setHours(30, 59, 59, 999);
-      // currentDate.setHours(10, 59, 59, 999);
-      const endOfDayCurrent = new Date(currentDate);
-      
-      console.log("startOfDayCurrent", startOfDayCurrent);
-      console.log("endOfDayCurrent", endOfDayCurrent);
-
-      // const a = new Date('2024-01-23T10:55:18');
-      // const b = new Date('2023-12-30T01:55:50');
-      // a.setHours(a.getHours() + 7);
-      // b.setHours(b.getHours() + 7);
-
-      // console.log("a", a);
-      // console.log("b", b);
-
-
-      const queryInDay = { IdDevice: deviceId, Time: { $gte: startOfDayCurrent, $lt: endOfDayCurrent } };
-      const dataInDay = await ElectricsModel.find(queryInDay).lean().exec();
-
-      console.log("resData", dataInDay);
-      console.log("resData", dataInDay.length);
-
-      const queryOneBeforeDay = { IdDevice: deviceId, Time: { $lt: startOfDayCurrent } };
-      const dataBeforeDay = await ElectricsModel.findOne(queryOneBeforeDay)
-                                                                            .sort({ Time: -1 })
-                                                                            .lean()
-                                                                            .exec();
-
-      
-      // Xử lý với các khung giờ bị mất thành null
-      const hourIntervals: Date[] = [];
-      let currentHourInterval = new Date(startOfDayCurrent);
-      
-      while (currentHourInterval <= endOfDayCurrent) {
-        hourIntervals.push(new Date(currentHourInterval));
-        currentHourInterval.setHours(currentHourInterval.getHours() + 1);
-      }
-      
-      // Kiểm tra và thêm dữ liệu hoặc null vào mảng
-      const dataWithNulls = hourIntervals.map(interval => {
-        const query = {
-          IdDevice: deviceId,
-          Time: { $gte: interval, $lt: new Date(interval.getTime() + 3600000) } // 3600000 milliseconds = 1 hour
-        };
-      
-        const data = dataInDay.find(item => interval.getTime() <= new Date(item.Time).getTime() && new Date(item.Time).getTime() < interval.getTime() + 3600000);
-        return data || null;
-      });
-      
-      console.log('Data with nulls:', dataWithNulls);
-
-      const kWhData = [];
-      let lastValue = 0;
-      let activePowerPerHour = [];
-      let electricPerHour = [];
-      let totalkWhDay = -1;
-
-      if (dataBeforeDay !== null) {
-        lastValue = dataBeforeDay.Total_kWh;
-      } else {
-        lastValue = 0;
-      }
-
-
-      activePowerPerHour = dataWithNulls.map(item => (item !== null ? item.Active_Power : null));
-      electricPerHour = dataWithNulls.map(item => (item !== null ? item.Current : null));
-      
-  
-      const kWhArr = dataWithNulls.map(item => (item !== null ? item.Total_kWh : null));
-      for (let i = 0; i < kWhArr.length; i++) {
-        if (kWhArr[i] === null) {
-          kWhData.push(null);
-        } else {
-          let result = kWhArr[i] - lastValue;
-          // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
-          if (result < 0) {
-            kWhData.push(null);
-            lastValue = kWhArr[i];
-          } else {
-            kWhData.push(result);
-            lastValue = kWhArr[i];
-          }
-        }
-      }
-
-      totalkWhDay = kWhData.reduce((acc, curr) => acc + curr, 0);
-
-      const resultData= {
-        totalkWhDay: totalkWhDay,
-        kWhData: kWhData,
-        dataBeforeDay: dataBeforeDay,
-        dataInDay: dataWithNulls,
-        activePowerPerHour: activePowerPerHour,
-        electricPerHour: electricPerHour,
-      };
-      return HttpResponse.returnSuccessResponse(res, resultData);
-    } catch (e) {
-      next(e);
-    }
-  }
-
   static async getCurrentMonDataPerDayV1(
     req: Request,
     res: Response,
@@ -658,6 +538,133 @@ export default class EnergyController {
   }
 
 
+  //////////////////////////////////////////////////////////////////////////
+  /////////////////////////NEW////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  static async getCurrentDayDataPerHour(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const deviceId = req.params.id;
+    try {
+      const { electrics: ElectricsModel } = global.mongoModel;
+
+      const currentDate = new Date();
+      // console.log("currentDate", currentDate);
+      // console.log("currentDate", typeof(currentDate));
+
+      // Đặt thời điểm về 0h00p00s
+      currentDate.setHours(7, 0, 0, 0);
+      // currentDate.setHours(-14, 0, 0, 0);
+      const startOfDayCurrent = new Date(currentDate);
+
+      // Đặt thời điểm về 23h59p59.999s
+      currentDate.setHours(30, 59, 59, 999);
+      // currentDate.setHours(10, 59, 59, 999);
+      const endOfDayCurrent = new Date(currentDate);
+      
+      // console.log("startOfDayCurrent", startOfDayCurrent);
+      // console.log("endOfDayCurrent", endOfDayCurrent);
+
+      // const a = new Date('2024-01-23T10:55:18');
+      // const b = new Date('2023-12-30T01:55:50');
+      // a.setHours(a.getHours() + 7);
+      // b.setHours(b.getHours() + 7);
+
+      // console.log("a", a);
+      // console.log("b", b);
+
+
+      const queryInDay = { IdDevice: deviceId, Time: { $gte: startOfDayCurrent, $lt: endOfDayCurrent } };
+      const dataInDay = await ElectricsModel.find(queryInDay).lean().exec();
+
+      // console.log("resData", dataInDay);
+      // console.log("resData", dataInDay.length);
+
+      const queryOneBeforeDay = { IdDevice: deviceId, Time: { $lt: startOfDayCurrent } };
+      const dataBeforeDay = await ElectricsModel.findOne(queryOneBeforeDay)
+                                                                            .sort({ Time: -1 })
+                                                                            .lean()
+                                                                            .exec();
+
+      
+      // Xử lý với các khung giờ bị mất thành null
+      const hourIntervals: Date[] = [];
+      let currentHourInterval = new Date(startOfDayCurrent);
+      
+      while (currentHourInterval <= endOfDayCurrent) {
+        hourIntervals.push(new Date(currentHourInterval));
+        currentHourInterval.setHours(currentHourInterval.getHours() + 1);
+      }
+      
+      // Kiểm tra và thêm dữ liệu hoặc null vào mảng
+      const dataWithNulls = hourIntervals.map(interval => {
+        const query = {
+          IdDevice: deviceId,
+          Time: { $gte: interval, $lt: new Date(interval.getTime() + 3600000) } // 3600000 milliseconds = 1 hour
+        };
+      
+        const data = dataInDay.find(item => interval.getTime() <= new Date(item.Time).getTime() && new Date(item.Time).getTime() < interval.getTime() + 3600000);
+        return data || null;
+      });
+      
+      // console.log('Data with nulls:', dataWithNulls);
+
+      const kWhData = [];
+      let lastValue = 0;
+      let activePowerPerHour = [];
+      let electricPerHour = [];
+      let totalkWhDay = -1;
+
+      if (dataBeforeDay !== null) {
+        lastValue = dataBeforeDay.Total_kWh;
+      } else {
+        lastValue = 0;
+      }
+
+
+      activePowerPerHour = dataWithNulls.map(item => (item !== null ? item.Active_Power : null));
+      electricPerHour = dataWithNulls.map(item => (item !== null ? item.Current : null));
+      
+  
+      const kWhArr = dataWithNulls.map(item => (item !== null ? item.Total_kWh : null));
+      for (let i = 0; i < kWhArr.length; i++) {
+        if (kWhArr[i] === null) {
+          kWhData.push(null);
+        } else {
+          let result = kWhArr[i] - lastValue;
+          // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
+          if (result < 0) {
+            kWhData.push(null);
+            lastValue = kWhArr[i];
+          } else {
+            kWhData.push(result);
+            lastValue = kWhArr[i];
+          }
+        }
+      }
+
+      totalkWhDay = kWhData.reduce((acc, curr) => acc + curr, 0);
+
+      const resultData= {
+        totalkWhDay: totalkWhDay,
+        kWhData: kWhData,
+        dataBeforeDay: dataBeforeDay,
+        dataInDay: dataWithNulls,
+        activePowerPerHour: activePowerPerHour,
+        electricPerHour: electricPerHour,
+      };
+      return HttpResponse.returnSuccessResponse(res, resultData);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  
+
+
   static async getCurrentMonDataPerDay(
     req: Request,
     res: Response,
@@ -670,9 +677,9 @@ export default class EnergyController {
     const year = parseInt(req.params.year, 10);
     const month = parseInt(req.params.month, 10);
 
-    console.log("deviceId", deviceId);
-    console.log("year", year);
-    console.log("month", month);
+    // console.log("deviceId", deviceId);
+    // console.log("year", year);
+    // console.log("month", month);
     if (isNaN(year) || isNaN(month) || month < 1 || month > 12) {
       return res.status(400).json({ error: 'Invalid year or month input.' });
     }
@@ -692,8 +699,8 @@ export default class EnergyController {
         const endOfDay = new Date(currentDay);
         endOfDay.setHours(30, 59, 59);
 
-        console.log("startOfDay", startOfDay);
-        console.log("endOfDay", endOfDay);
+        // console.log("startOfDay", startOfDay);
+        // console.log("endOfDay", endOfDay);
 
         const query = {
           IdDevice: deviceId,
@@ -715,13 +722,13 @@ export default class EnergyController {
                                                                             .lean()
                                                                             .exec();
 
-        console.log("dataInMon", dataInMon);
+        // console.log("dataInMon", dataInMon);
         resultArray.push(dataInMon !== null ? dataInMon : null);
       }
 
-      console.log("resultArray", resultArray);
+      // console.log("resultArray", resultArray);
 
-      console.log("startOfMonth", startOfMonth);
+      // console.log("startOfMonth", startOfMonth);
 
       const queryOneBeforeMon = {
         IdDevice: deviceId,
@@ -732,7 +739,7 @@ export default class EnergyController {
                                                                             .sort({ Time: -1 })
                                                                             .lean()
                                                                             .exec();
-      console.log("dataBeforeMon", dataBeforeMon);
+      // console.log("dataBeforeMon", dataBeforeMon);
 
       const kWhData = [];
       let lastValue = 0;
@@ -782,6 +789,33 @@ export default class EnergyController {
     }
   }
 
+  static async latestData(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const id = req.params.id;
+    const {electrics: ElectricsModel } = global.mongoModel;
+    try{
+      const currentDay = new Date();
+      currentDay.setHours(currentDay.getHours() + 7);
+      // console.log("currentDay", currentDay);
+      const query = {
+        IdDevice: id,
+        Time: {$lt: currentDay},
+      }
+
+      const data = await ElectricsModel.findOne(query)
+                                                            .sort({Time: -1})
+                                                            .lean()
+                                                            .exec();
+      const resultData = data;
+      return HttpResponse.returnSuccessResponse(res, resultData);
+    } catch (e) {
+      next(e);
+    }
+  }
+
 
 
 
@@ -796,7 +830,7 @@ export default class EnergyController {
 
     const lastStartDay = new Date(startTime);
 
-    console.log("lastStartDay", lastStartDay);
+    // console.log("lastStartDay", lastStartDay);
 
     // lastStartDay.setDate(lastStartDay.getDate() - 1);
     // const lastStartDayhihi = lastStartDay.toISOString().slice(0, -1);
@@ -811,7 +845,7 @@ export default class EnergyController {
 
     lastEndDay.setDate(lastEndDay.getDate() + 1);
 
-    console.log("lastEndDay", lastEndDay);
+    // console.log("lastEndDay", lastEndDay);
     // lastEndDay.setDate(lastEndDay.getDate() - 1);
     // const lastEndDayhihi = lastEndDay.toISOString().slice(0, -1);
 
@@ -834,9 +868,9 @@ export default class EnergyController {
       const resListDevice: AxiosResponse = await axios.get(urlDevices);
 
       const countDevice = resListDevice.data.length;
-      console.log("countDevice", countDevice);
+      // console.log("countDevice", countDevice);
 
-      console.log(resListDevice.data[0]);
+      // console.log(resListDevice.data[0]);
 
       // dic chưa id và name
       const idNameDict: { [key: number]: string } = {};
@@ -877,7 +911,7 @@ export default class EnergyController {
     const tempDay = lastStartDay;
 
     while (tempDay < lastEndDay) {
-      console.log(tempDay);
+      // console.log(tempDay);
       // let dayQuery = tempDay.getDate();
       // let monQuery = tempDay.getMonth();
       let yearQuery = tempDay.getFullYear();
@@ -893,9 +927,9 @@ export default class EnergyController {
       } else {
         monQuery = (tempDay.getMonth() + 1).toString();
       }
-      console.log("Day", dayQuery);
-      console.log("Mon", monQuery);
-      console.log("Year", yearQuery);
+      // console.log("Day", dayQuery);
+      // console.log("Mon", monQuery);
+      // console.log("Year", yearQuery);
       tempDay.setDate(tempDay.getDate() + 1);
 
       const dataDayAllDeivceList = [];
@@ -932,16 +966,16 @@ export default class EnergyController {
         let dataGetLength = dataDayAllDeivceListFlat.length;
         let dataGet = dataDayAllDeivceListFlat;
 
-        console.log("hhhh", typeof(dataGet[0].Time))
-        console.log("time hhhh", new Date(dataGet[0].Time));
+        // console.log("hhhh", typeof(dataGet[0].Time))
+        // console.log("time hhhh", new Date(dataGet[0].Time));
 
         //backup
         for (let i = 0; i < dataGetLength; i++) {
-          console.log("dataGet", dataGet[i]);
+          // console.log("dataGet", dataGet[i]);
           
           let originTime = new Date(dataGet[i].Time);
           originTime.setHours(originTime.getHours() + 7);
-          console.log("originTime", originTime);
+          // console.log("originTime", originTime);
           const electricData = await ElectricsModel.create({
                   IdDevice: dataGet[i].DeviceId,
                   NameRoom: idNameDict[dataGet[i].DeviceId],
@@ -971,5 +1005,39 @@ export default class EnergyController {
       next(e);
     }
   }
+
+  static async clearData(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+
+    // input: 2024-01-24/2024-01-24: không cần giờ
+    let startTime = req.params.startTime;
+    // console.log("startTime", startTime);
+
+    const lastStartDay = new Date(startTime);
+    // console.log("lastStartDay", lastStartDay);
+
+
+    let endTime = req.params.endTime;
+    // console.log("endTime", endTime);
+    const lastEndDay = new Date(endTime);
+    lastEndDay.setHours(30, 59, 59, 999);
+    // console.log("lastEndDay", lastEndDay);
+
+    const {electrics: ElectricsModel } = global.mongoModel;
+    try {
   
+      const query = {
+        Time: {$gte: lastStartDay, $lt: lastEndDay},
+      }
+      const data = await ElectricsModel.deleteMany(query);
+
+      const resultData = "clear data";
+      return HttpResponse.returnSuccessResponse(res, data);
+    } catch (e) {
+      next(e);
+    }
+  } 
 }

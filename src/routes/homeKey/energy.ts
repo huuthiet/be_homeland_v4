@@ -12,7 +12,7 @@ const energyRoute = express.Router();
 /* ------------------------------- PUBLIC API ------------------------------- */
 
 // Get room detail
-energyRoute.route("/devices").get(EnergyController.getAllDevice);
+
 
 //V1
 energyRoute.route("/device/dataV1/:id").get(EnergyController.getDeviceDataV1);
@@ -27,27 +27,28 @@ energyRoute.route("/device/currentMonDataPerDayV1/:id")
 energyRoute.route("/devices/backUpData/:startTime/:endTime")
                     .get(EnergyController.backUpDataPerDay);             
 
-
+energyRoute.route("/devices/clearData/:startTime/:endTime")
+                    .get(EnergyController.clearData);   
 // V2
-// energyRoute.route("/device/data/:id").get(EnergyController.getDeviceData);
-// energyRoute.route("/device/latestData/:id").get(EnergyController.getLatestDeviceDataV1);
+
+/* ---------------------------- CHECK PERMISSION ---------------------------- */
+/* ------------------------------ PRIVATE APIS ------------------------------ */
+// Login
+// energyRoute.use(AuthMiddleware.isAuthenticated);
+
+// Host
+// energyRoute.use(AuthMiddleware.isHost);
+energyRoute.route("/device/latestData/:id").get(EnergyController.latestData);
 energyRoute.route("/device/currentDayDataPerHour/:id")
                     .get(EnergyController.getCurrentDayDataPerHour);
 
 energyRoute.route("/device/currentMonDataPerDay/:id/:year/:month")
                     .get(EnergyController.getCurrentMonDataPerDay);
-/* ---------------------------- CHECK PERMISSION ---------------------------- */
 
-// Login
-// roomRoute.use(AuthMiddleware.isAuthenticated);
+// Master                    
+// energyRoute.use(AuthMiddleware.isMaster);                  
+energyRoute.route("/devices").get(EnergyController.getAllDevice);
 
-// Host
-// roomRoute.use(AuthMiddleware.isHost);
-
-/* ------------------------------ PRIVATE APIS ------------------------------ */
-
-// Create room
-// roomRoute.route("/").post(RoomController.createRoom);
 
 
 /* -------------------------------------------------------------------------- */
