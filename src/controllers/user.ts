@@ -481,6 +481,8 @@ export default class UserController {
    *          - auth: []
    */
 
+
+  //note
   static async updateProfile(
     req: Request,
     res: Response,
@@ -525,6 +527,7 @@ export default class UserController {
         }
       }
       let resData = null;
+      ////////////////////////////////
       if (data.phoneNumberFull) {
         data.phoneNumber = {
           countryCode: "+84",
@@ -549,8 +552,31 @@ export default class UserController {
           );
         }
 
-        // Update normal data
-        resData = await userModel
+
+        const currentUser = await userModel
+          .findOne({
+            _id: data._id,
+            isDeleted: false,
+          })
+          .lean()
+          .exec();
+
+        if (!currentUser.idDevice) {
+
+          
+          
+         
+          await userModel.updateOne({
+            _id: data._id,
+            isDeleted: false,
+          },
+            {
+              $set: { idDevice: null }
+            }
+          )
+
+          // Update normal data
+          resData = await userModel
           .findOneAndUpdate(
             { _id: data._id },
             {
@@ -564,6 +590,7 @@ export default class UserController {
               gender: data.gender,
               phoneNumberFull: data.phoneNumberFull,
               phoneNumber: data.phoneNumber,
+              idDevice: data.idDevice,
             },
             {
               new: true,
@@ -572,9 +599,8 @@ export default class UserController {
           )
           .populate("avatar identityCards backId frontId")
           .lean();
-      } else {
-        // Update normal data
-        resData = await userModel
+        } else {
+          resData = await userModel
           .findOneAndUpdate(
             { _id: data._id },
             {
@@ -587,6 +613,8 @@ export default class UserController {
               nationalId: data.nationalId,
               gender: data.gender,
               phoneNumberFull: data.phoneNumberFull,
+              phoneNumber: data.phoneNumber,
+              idDevice: data.idDevice,
             },
             {
               new: true,
@@ -595,6 +623,75 @@ export default class UserController {
           )
           .populate("avatar identityCards backId frontId")
           .lean();
+        }
+
+      } else {
+        // Update normal data
+
+        const currentUser = await userModel
+          .findOne({
+            _id: data._id,
+            isDeleted: false,
+          })
+          .lean()
+          .exec();
+
+          if (!currentUser.idDevice) {
+            await userModel.updateOne({
+                _id: data._id,
+                isDeleted: false,
+              },
+              {
+                $set: { idDevice: null }
+              }
+            )
+
+            resData = await userModel
+              .findOneAndUpdate(
+                { _id: data._id },
+                {
+                  address: data.address,
+                  dobString: data.dobAction,
+                  dob: dob,
+                  email: data.email,
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                  nationalId: data.nationalId,
+                  gender: data.gender,
+                  phoneNumberFull: data.phoneNumberFull,
+                  idDevice: data.idDevice,
+                },
+                {
+                  new: true,
+                  fields: { password: 0, token: 0 },
+                }
+              )
+              .populate("avatar identityCards backId frontId")
+              .lean();
+          } else {
+            resData = await userModel
+              .findOneAndUpdate(
+                { _id: data._id },
+                {
+                  address: data.address,
+                  dobString: data.dobAction,
+                  dob: dob,
+                  email: data.email,
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                  nationalId: data.nationalId,
+                  gender: data.gender,
+                  phoneNumberFull: data.phoneNumberFull,
+                  idDevice: data.idDevice,
+                },
+                {
+                  new: true,
+                  fields: { password: 0, token: 0 },
+                }
+              )
+              .populate("avatar identityCards backId frontId")
+              .lean();
+          }
       }
 
       return HttpResponse.returnSuccessResponse(res, resData);

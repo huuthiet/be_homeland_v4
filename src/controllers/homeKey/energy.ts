@@ -578,7 +578,9 @@ export default class EnergyController {
 
 
       const queryInDay = { IdDevice: deviceId, Time: { $gte: startOfDayCurrent, $lt: endOfDayCurrent } };
-      const dataInDay = await ElectricsModel.find(queryInDay).lean().exec();
+      let dataInDay = await ElectricsModel.find(queryInDay).lean().exec();
+      console.log("dataInDay", dataInDay);
+
 
       // console.log("resData", dataInDay);
       // console.log("resData", dataInDay.length);
@@ -591,24 +593,51 @@ export default class EnergyController {
 
       
       // Xử lý với các khung giờ bị mất thành null
+      // const hourIntervals: Date[] = [];
+      // let currentHourInterval = new Date(startOfDayCurrent);
+      
+      // while (currentHourInterval <= endOfDayCurrent) {
+      //   hourIntervals.push(new Date(currentHourInterval));
+      //   currentHourInterval.setHours(currentHourInterval.getHours() + 1);
+      // }
+      
+      // // Kiểm tra và thêm dữ liệu hoặc null vào mảng
+      // const dataWithNulls = hourIntervals.map(interval => {
+      //   const query = {
+      //     IdDevice: deviceId,
+      //     Time: { $gte: interval, $lt: new Date(interval.getTime() + 3600000) } // 3600000 milliseconds = 1 hour
+      //   };
+      
+      //   const data = dataInDay.find(item => interval.getTime() <= new Date(item.Time).getTime() && new Date(item.Time).getTime() < interval.getTime() + 3600000);
+      //   return data || null;
+      // });
+
       const hourIntervals: Date[] = [];
       let currentHourInterval = new Date(startOfDayCurrent);
-      
+
       while (currentHourInterval <= endOfDayCurrent) {
         hourIntervals.push(new Date(currentHourInterval));
         currentHourInterval.setHours(currentHourInterval.getHours() + 1);
       }
-      
+
       // Kiểm tra và thêm dữ liệu hoặc null vào mảng
       const dataWithNulls = hourIntervals.map(interval => {
         const query = {
           IdDevice: deviceId,
           Time: { $gte: interval, $lt: new Date(interval.getTime() + 3600000) } // 3600000 milliseconds = 1 hour
         };
-      
-        const data = dataInDay.find(item => interval.getTime() <= new Date(item.Time).getTime() && new Date(item.Time).getTime() < interval.getTime() + 3600000);
+
+        // Sắp xếp dataInDay theo thứ tự giảm dần của thời gian
+        const sortedData = dataInDay.sort((a, b) => new Date(b.Time).getTime() - new Date(a.Time).getTime());
+
+        // Tìm kiếm đối tượng dữ liệu đầu tiên trong khoảng thời gian
+        const data = sortedData.find(item =>
+          interval.getTime() <= new Date(item.Time).getTime() && new Date(item.Time).getTime() < interval.getTime() + 3600000
+        );
+
         return data || null;
       });
+
       
       // console.log('Data with nulls:', dataWithNulls);
 

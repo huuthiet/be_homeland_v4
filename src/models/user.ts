@@ -158,6 +158,9 @@ export class User extends Basic {
   @prop({ default: 0 })
   wallet: number;
 
+  @prop({ default: null })
+  idDevice: number;
+
   @staticMethod
   static async validatePassword(
     inputPassword: string,
