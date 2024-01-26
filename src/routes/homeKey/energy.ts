@@ -34,7 +34,7 @@ energyRoute.route("/devices/clearData/:startTime/:endTime")
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
 /* ------------------------------ PRIVATE APIS ------------------------------ */
 // Login
-// energyRoute.use(AuthMiddleware.isAuthenticated);
+energyRoute.use(AuthMiddleware.isAuthenticated);
 
 // Host
 // energyRoute.use(AuthMiddleware.isHost);
@@ -46,7 +46,7 @@ energyRoute.route("/device/currentMonDataPerDay/:id/:year/:month")
                     .get(EnergyController.getCurrentMonDataPerDay);
 
 // Master                    
-// energyRoute.use(AuthMiddleware.isMaster);                  
+energyRoute.use(AuthMiddleware.isMaster);                  
 energyRoute.route("/devices").get(EnergyController.getAllDevice);
 
 
