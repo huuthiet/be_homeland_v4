@@ -579,7 +579,7 @@ export default class EnergyController {
 
       const queryInDay = { IdDevice: deviceId, Time: { $gte: startOfDayCurrent, $lt: endOfDayCurrent } };
       let dataInDay = await ElectricsModel.find(queryInDay).lean().exec();
-      console.log("dataInDay", dataInDay);
+      // console.log("dataInDay", dataInDay);
 
 
       // console.log("resData", dataInDay);
@@ -1069,4 +1069,37 @@ export default class EnergyController {
       next(e);
     }
   } 
+
+  static async getNameRoomById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    let idDevice = req.params.id;
+    try {
+      const url = 'http://homeland-2.ddns.net:8005/api/v1/devices/';
+      // const transactionsData:string = "hihi";
+      const res2: AxiosResponse = await axios.get(url);
+
+      const listDevice = res2.data;
+
+      // console.log("listDevice", listDevice);
+
+      // console.log("type list Device", typeof(listDevice[0].Id));
+
+      const room = listDevice.find(item => item.Id == idDevice);
+      // console.log("room", room)
+      // console.log("xxx", idDevice);
+      // console.log("idDevice", typeof(idDevice))
+      const roomName = room ? room.Name : null
+
+      const resultData = {
+        idDevice: idDevice,
+        roomName: roomName,
+      };
+      return HttpResponse.returnSuccessResponse(res, resultData);
+    } catch (e) {
+      next(e);
+    }
+  }
 }

@@ -15,13 +15,13 @@ const energyRoute = express.Router();
 
 
 //V1
-energyRoute.route("/device/dataV1/:id").get(EnergyController.getDeviceDataV1);
-energyRoute.route("/device/latestDataV1/:id").get(EnergyController.getLatestDeviceDataV1);
-energyRoute.route("/device/currentDayDataPerHourV1/:id")
-                    .get(EnergyController.getCurrentDayDataPerHourV1);
+// energyRoute.route("/device/dataV1/:id").get(EnergyController.getDeviceDataV1);
+// energyRoute.route("/device/latestDataV1/:id").get(EnergyController.getLatestDeviceDataV1);
+// energyRoute.route("/device/currentDayDataPerHourV1/:id")
+//                     .get(EnergyController.getCurrentDayDataPerHourV1);
 
-energyRoute.route("/device/currentMonDataPerDayV1/:id")
-                    .get(EnergyController.getCurrentMonDataPerDayV1);
+// energyRoute.route("/device/currentMonDataPerDayV1/:id")
+//                     .get(EnergyController.getCurrentMonDataPerDayV1);
 
 // ----------------------BACKUP----------------------------------------
 energyRoute.route("/devices/backUpData/:startTime/:endTime")
@@ -44,6 +44,9 @@ energyRoute.route("/device/currentDayDataPerHour/:id")
 
 energyRoute.route("/device/currentMonDataPerDay/:id/:year/:month")
                     .get(EnergyController.getCurrentMonDataPerDay);
+
+energyRoute.route("/device/getNameRoomById/:id")
+                    .get(EnergyController.getNameRoomById);                  
 
 // Master                    
 energyRoute.use(AuthMiddleware.isMaster);                  
