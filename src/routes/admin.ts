@@ -6,6 +6,8 @@ import JobController from "../controllers/homeKey/job";
 import OrderController from "../controllers/homeKey/order";
 import UserController from "../controllers/user";
 import TransactionsController from "../controllers/homeKey/transactions";
+import RequestWithdrawsController from "../controllers/homeKey/requestWithdraws";
+
 
 const adminRoute = express.Router();
 
@@ -84,6 +86,16 @@ adminRoute
 
 adminRoute.route("/bank").get(TransactionsController.getBank);
 adminRoute.route("/bankname").get(TransactionsController.getBankName);
+
+// note
+adminRoute 
+  .route("/requestWithdraws")
+  .get(RequestWithdrawsController.getRequestWithdraws);
+
+adminRoute
+  .route("/requestWithdraws/:id")
+  .put(RequestWithdrawsController.putRequestWithdraw);
+// -------------------------------------
 
 /* -------------------------------------------------------------------------- */
 /*                             END USER MIDDLEWARE                            */

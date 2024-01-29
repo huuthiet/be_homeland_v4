@@ -2,6 +2,9 @@ import * as express from "express";
 
 import UserController from "../controllers/user";
 import AuthMiddleware from "../middlewares/auth";
+import RequestWithdrawsController from "../controllers/homeKey/requestWithdraws";
+import TransactionsController from "../controllers/homeKey/transactions";
+
 
 const userRoute = express.Router();
 
@@ -10,6 +13,8 @@ const userRoute = express.Router();
 /* -------------------------------------------------------------------------- */
 
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
+
+
 
 userRoute.use(AuthMiddleware.isAuthenticated);
 
@@ -34,6 +39,32 @@ userRoute.get("/notification/list", UserController.getNotificationList);
 
 // recharge wallet
 userRoute.route("/recharge").post(UserController.rechargeWallet);
+
+// note
+//bank
+userRoute
+  .route("/bank")
+  .get(UserController.getBankUser);
+
+userRoute
+  .route("/bank/:id")
+  .post(TransactionsController.postAddBank)
+  .get(TransactionsController.getBankDetail)
+  .delete(TransactionsController.deleteBankName);
+
+userRoute.route("/bankname/").get(TransactionsController.getBankName);
+
+userRoute
+  .route("/requestWithdraws/:id")
+  .post(RequestWithdrawsController.postRequestWithdraw);
+
+userRoute
+  .route("/requestWithdraws/list")
+  .get(RequestWithdrawsController.getRequestWithdrawsUser);
+
+
+
+  //-------------------------
 
 userRoute.use(AuthMiddleware.isMaster);
 userRoute.get("/admin/motelRoom/list", UserController.getMotelRoomListAdmin);

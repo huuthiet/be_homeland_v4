@@ -1491,6 +1491,77 @@ export default class UserController {
     return normalizeError(validateResults);
   }
 
+
+  // note 
+  static async getBankUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    try {
+      // Init user model`
+      const { banking: BankingModel, image: imageModel } = global.mongoModel;
+      let { sortBy, size, page, keyword } = req.query;
+      const sortType = req.query.sortType === "ascending" ? 1 : -1;
+      let condition, sort;
+
+      condition = [
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: "images",
+            localField: "images",
+            foreignField: "_id",
+            as: "images",
+          },
+        },
+        {
+          $project: {
+            isDeleted: 0,
+            "user.password": 0,
+            "user.token": 0,
+            "user.isDeleted": 0,
+            "user._v": 0,
+          },
+        },
+      ];
+
+      const userCondition = { "user._id": req["userId"] };
+      condition.push({ $match: userCondition });
+
+      if (sortBy && sortType) {
+        switch (sortBy) {
+          case "createdAt": {
+            sort = { createdAt: sortType };
+            break;
+          }
+          case "updatedAt": {
+            sort = { updatedAt: sortType };
+            break;
+          }
+          default:
+            sort = { createdAt: -1 };
+        }
+        condition.push({ $sort: sort });
+      }
+
+      const resData = await BankingModel.paginate(size, page, condition);
+
+      return HttpResponse.returnSuccessResponse(res, resData);
+    } catch (e) {
+      next(e);
+    }
+  }
+  // -------------
+
   /* -------------------------------------------------------------------------- */
   /*                             END HELPER FUNCTION                            */
   /* -------------------------------------------------------------------------- */
