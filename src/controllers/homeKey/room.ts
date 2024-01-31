@@ -132,6 +132,7 @@ export default class RoomController {
 
       let initRoomData = {
         name: data.name,
+        idElectricMetter: data.idElectricMetter,
         status: data.status,
         price: parseInt(data.price),
         electricityPrice: parseInt(data.electricityPrice),
@@ -1461,6 +1462,7 @@ export default class RoomController {
       const id = req.body.id;
       const utilities = req.body.utilities;
       const name = req.body.name;
+      const idElectricMetter = req.body.idElectricMetter;
       const price = req.body.price;
       const electricityPrice = req.body.electricityPrice;
       const waterPrice = req.body.waterPrice;
@@ -1515,6 +1517,7 @@ export default class RoomController {
             {
               utilities: utilities,
               name: name,
+              idElectricMetter: idElectricMetter,
               price: price,
               electricityPrice: electricityPrice,
               waterPrice: waterPrice,
@@ -1540,6 +1543,7 @@ export default class RoomController {
             {
               utilities: utilities,
               name: name,
+              idElectricMetter: idElectricMetter,
               price: price,
               electricityPrice: electricityPrice,
               waterPrice: waterPrice,
