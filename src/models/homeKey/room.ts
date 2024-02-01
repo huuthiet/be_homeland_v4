@@ -40,8 +40,8 @@ export class Room extends Basic {
   @prop()
   name: string;
 
-  @prop({ default: null })
-  idElectricMetter: string | null;
+  @prop({ default: "0" })
+  idElectricMetter: string;
 
   @prop({ default: 0 })
   acreage: number;

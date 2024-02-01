@@ -896,4 +896,33 @@ export default class TransactionsController {
       next(e);
     }
   }
+
+  //note
+  static async getBankMasterName(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    try {
+      // Init user model`
+      const { user: userModel, code: codeModel } = global.mongoModel;
+      const { banking: BankingModel, image: imageModel } = global.mongoModel;
+
+      const adminUser = await userModel.findOne({ role: { $in: ['master'] } });
+
+    if (adminUser) {
+      // Use the admin user's ID to find banking information
+      const bankMasterOptions = await BankingModel.find({ user: adminUser._id });
+      
+      return HttpResponse.returnSuccessResponse(res, bankMasterOptions);
+    } else {
+      // Handle the case where no admin user is found
+      return HttpResponse.returnNotFoundResponse(res, 'No admin user found');
+    }
+      // return HttpResponse.returnSuccessResponse(res, bankMasterOptions);
+    } catch (e) {
+      next(e);
+    }
+  }
+  //----------------
 }

@@ -14,6 +14,7 @@ const jobRoute = express.Router();
 
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
 
+
 jobRoute.use(AuthMiddleware.isAuthenticated);
 
 /* ------------------------------ PRIVATE APIS ------------------------------ */

@@ -14,8 +14,6 @@ const userRoute = express.Router();
 
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
 
-
-
 userRoute.use(AuthMiddleware.isAuthenticated);
 
 /* ------------------------------- PRIVATE API ------------------------------ */
@@ -61,6 +59,8 @@ userRoute
 userRoute
   .route("/requestWithdraws/list")
   .get(RequestWithdrawsController.getRequestWithdrawsUser);
+
+userRoute.route("/bankmastername").get(TransactionsController.getBankMasterName);
 
 
 
