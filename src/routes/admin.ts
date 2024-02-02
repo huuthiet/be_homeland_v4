@@ -7,10 +7,14 @@ import OrderController from "../controllers/homeKey/order";
 import UserController from "../controllers/user";
 import TransactionsController from "../controllers/homeKey/transactions";
 import RequestWithdrawsController from "../controllers/homeKey/requestWithdraws";
+import MotelRoomController from "../controllers/homeKey/motelRoom";
 
 
 const adminRoute = express.Router();
 
+adminRoute
+  .route("/listMotel/host/:id")
+  .get(MotelRoomController.getBuildingListByHost)
 
 /* -------------------------------------------------------------------------- */
 /*                            START USER MIDDLEWARE                           */
@@ -95,6 +99,14 @@ adminRoute
 adminRoute
   .route("/requestWithdraws/:id")
   .put(RequestWithdrawsController.putRequestWithdraw);
+
+adminRoute
+  .route("/host")
+  .get(UserController.getHostList)
+
+// adminRoute
+//   .route("/listMotel/host")
+//   .get(MotelRoomController.getBuildingListByHost)
 // -------------------------------------
 
 /* -------------------------------------------------------------------------- */

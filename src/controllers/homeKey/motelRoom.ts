@@ -1529,6 +1529,30 @@ export default class MotelRoomController {
     }
   }
 
+  //note 
+  static async getBuildingListByHost(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    const id = req.params.id;
+
+    console.log("id", id)
+    console.log("mongoose.Types.ObjectId(id)", mongoose.Types.ObjectId(id))
+
+    const { motelRoom: motelRoomModel, } = global.mongoModel;
+    try {
+
+      const resData = await motelRoomModel.find({ owner: mongoose.Types.ObjectId(id) }).populate("motels").lean().exec();
+
+      console.log("resData", resData)
+      return HttpResponse.returnSuccessResponse(res, resData);
+    } catch (e) {
+      next(e);
+    }
+  }
+  //----------
+
   /* -------------------------------------------------------------------------- */
   /*                             END HELPER FUNCTION                            */
   /* -------------------------------------------------------------------------- */

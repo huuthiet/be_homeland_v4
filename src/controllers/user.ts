@@ -1560,6 +1560,168 @@ export default class UserController {
       next(e);
     }
   }
+
+  static async getHostList(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+    try {
+      // Init user model
+      const { user: userModel } = global.mongoModel;
+
+      let sortBy: string = req.query.sortBy
+        ? req.query.sortBy.toString()
+        : undefined;
+      let role: any = req.query.role ? req.query.role.toString() : undefined;
+      let size: number = req.query.size
+        ? +req.query.size.toString()
+        : undefined;
+      let page: number = req.query.page
+        ? +req.query.page.toString()
+        : undefined;
+      let keyword: string = req.query.keyword
+        ? req.query.keyword.toString()
+        : undefined;
+      let isVerified: string = req.query.isVerified
+        ? req.query.isVerified.toString()
+        : undefined;
+
+      const sortType = req.query.sortType === "ascending" ? 1 : -1;
+      let condition, sort, dob;
+
+      if (role && !Array.isArray(role)) {
+        role = [role];
+      }
+
+      //If isVerified is not exist, get all isVerified
+      if (!isVerified) {
+        isVerified = "all";
+      }
+
+      keyword = keyword ? keyword.toString() : keyword;
+
+      // if (keyword && moment(keyword).isValid()) {
+      // 	dob = new Date(keyword)
+      // }
+
+      // Check keyword is valid or not
+      keyword = helpers.escapeRegexp(keyword);
+
+      condition = [
+        {
+          $match: {
+            $and: [
+              {
+                // Search name, phone number, email by string input
+                // $or: [
+                // 	{ firstName: new RegExp(keyword, 'i') },
+                // 	{ lastName: new RegExp(keyword, 'i') }
+                // ]
+              },
+              // filter gender, is verified, active, provider and role
+              isVerified === "all"
+                ? {}
+                : isVerified === "true"
+                ? { isVerified: true }
+                : { isVerified: false },
+              // { role: { $nin: ["master", "content"] } },
+              { role: { $in: ["host", "content"] } },
+            ],
+          },
+        },
+        // Populate avatar
+        {
+          $lookup: {
+            from: "images",
+            localField: "avatar",
+            foreignField: "_id",
+            as: "avatar",
+          },
+        },
+        { $unwind: { path: "$avatar", preserveNullAndEmptyArrays: true } },
+        // Populate identityCards
+        {
+          $lookup: {
+            from: "images",
+            localField: "identityCards",
+            foreignField: "_id",
+            as: "identityCards",
+          },
+        },
+        // Project token, password
+        {
+          $project: {
+            token: 0,
+            password: 0,
+          },
+        },
+      ];
+
+      if (sortBy && sortType) {
+        switch (sortBy) {
+          case "name": {
+            sort = { firstName: sortType, lastName: sortType };
+            break;
+          }
+          case "id": {
+            sort = { _id: sortType };
+            break;
+          }
+          case "dob": {
+            sort = { dob: sortType };
+            break;
+          }
+          case "phoneNumber": {
+            sort = { phoneNumber: sortType };
+            break;
+          }
+          case "email": {
+            sort = { email: sortType };
+            break;
+          }
+          case "active": {
+            sort = { active: sortType };
+            break;
+          }
+          case "role": {
+            sort = { role: sortType };
+            break;
+          }
+          default: {
+            sort = { createdAt: -1 };
+            break;
+          }
+        }
+
+        condition.push({ $sort: sort });
+      } else {
+        condition.push({ $sort: { createdAt: -1 } });
+      }
+
+      let userData = await userModel.paginate(size, page, condition);
+
+      // Get avatar url
+      for (let i = 0; i < userData.data.length; i++) {
+        if (userData.data[i].avatar) {
+          userData.data[i].avatar = await helpers.getImageUrl(
+            userData.data[i].avatar
+          );
+        }
+
+        if (userData.data[i].identityCards) {
+          userData.data[i].identityCards = await helpers.getImageUrl(
+            userData.data[i].identityCards,
+            true
+          );
+        }
+      }
+
+      return HttpResponse.returnSuccessResponse(res, userData);
+    } catch (e) {
+      next(e);
+    }
+  }
   // -------------
 
   /* -------------------------------------------------------------------------- */
