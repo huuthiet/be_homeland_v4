@@ -11,7 +11,7 @@ const energyRoute = express.Router();
 
 /* ------------------------------- PUBLIC API ------------------------------- */
 
-// Get room detail
+
 
 
 //V1
@@ -28,13 +28,21 @@ energyRoute.route("/devices/backUpData/:startTime/:endTime")
                     .get(EnergyController.backUpDataPerDay);             
 
 energyRoute.route("/devices/clearData/:startTime/:endTime")
-                    .get(EnergyController.clearData);   
+                    .get(EnergyController.clearData);
+                    
+                
+
+
 // V2
 
 /* ---------------------------- CHECK PERMISSION ---------------------------- */
 /* ------------------------------ PRIVATE APIS ------------------------------ */
 // Login
 energyRoute.use(AuthMiddleware.isAuthenticated);
+
+energyRoute.route("/device/getDataPerDayTimeToTime/:id/:startTime/:endTime")
+                    .get(EnergyController.getDataTimeToTime); 
+
 
 // Host
 // energyRoute.use(AuthMiddleware.isHost);

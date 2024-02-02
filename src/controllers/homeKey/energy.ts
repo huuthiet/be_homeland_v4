@@ -776,30 +776,30 @@ export default class EnergyController {
 
 
 
-        if (dataBeforeMon !== null) {
-          lastValue = dataBeforeMon.Total_kWh;
-        } else {
-          lastValue = 0;
-        }
+      if (dataBeforeMon !== null) {
+        lastValue = dataBeforeMon.Total_kWh;
+      } else {
+        lastValue = 0;
+      }
 
-        
-    
-        const kWhArr = resultArray.map(item => (item !== null ? item.Total_kWh : null));
-        for (let i = 0; i < kWhArr.length; i++) {
-          if (kWhArr[i] === null) {
+      
+  
+      const kWhArr = resultArray.map(item => (item !== null ? item.Total_kWh : null));
+      for (let i = 0; i < kWhArr.length; i++) {
+        if (kWhArr[i] === null) {
+          kWhData.push(null);
+        } else {
+          let result = kWhArr[i] - lastValue;
+          // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
+          if (result < 0) {
             kWhData.push(null);
+            lastValue = kWhArr[i];
           } else {
-            let result = kWhArr[i] - lastValue;
-            // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
-            if (result < 0) {
-              kWhData.push(null);
-              lastValue = kWhArr[i];
-            } else {
-              kWhData.push(result);
-              lastValue = kWhArr[i];
-            }
+            kWhData.push(result);
+            lastValue = kWhArr[i];
           }
         }
+      }
 
       totalkWhMon = kWhData.reduce((acc, curr) => acc + curr, 0);
 
@@ -810,7 +810,6 @@ export default class EnergyController {
         dataBeforeMon: dataBeforeMon,
         kWhData: kWhData,
         dataInMon: resultArray,
-        
       };
       return HttpResponse.returnSuccessResponse(res, resultData);
     } catch (e) {
@@ -1098,6 +1097,154 @@ export default class EnergyController {
         roomName: roomName,
       };
       return HttpResponse.returnSuccessResponse(res, resultData);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  // get data from time to time;
+
+  static async getDataTimeToTime(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<any> {
+
+    let id = req.params.id;
+
+    // input: 2024-01-24/2024-01-24: không cần giờ
+    let startTime = req.params.startTime;
+    console.log("startTime", startTime);
+
+    const lastStartDay = new Date(startTime);
+    console.log("lastStartDay", lastStartDay);
+
+
+    let endTime = req.params.endTime;
+    console.log("endTime", endTime);
+    const lastEndDay = new Date(endTime);
+    lastEndDay.setHours(30, 59, 59, 999);
+
+    console.log("lastEndDay", lastEndDay);
+
+    console.log('Kết quả phép so sánh:', lastStartDay < lastEndDay);
+
+
+    const {electrics: ElectricsModel } = global.mongoModel;
+
+    try {
+      if (lastStartDay > lastEndDay) {
+        return HttpResponse.returnBadRequestResponse(
+          res,
+          "Thời gian bắt đầu lớn hơn thời gian kết thúc"
+        );
+      }; 
+      const datesInRange: Date[] = [];
+      let currentDate = new Date(lastStartDay);
+
+      // console.log("currentDate", currentDate);
+
+      while (currentDate <= lastEndDay) {
+          datesInRange.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      console.log("datesInRange", datesInRange);
+
+      const resultData = [];
+      for (const date of datesInRange) {
+
+        console.log("date", date);
+        const endOfDay = new Date(date);
+        console.log("endOfDay", endOfDay);
+        endOfDay.setHours(30, 59, 59, 999);
+        console.log("endOfDay", endOfDay)
+
+        const query = {
+          IdDevice: id,
+            Time: {
+                $gte: date,
+                $lte: endOfDay,
+            },
+        };
+
+        const result = await ElectricsModel.findOne(query)
+                                                                .sort({ Time: -1 })
+                                                                .lean()
+                                                                .exec();
+        resultData.push(result);
+        console.log(`Dữ liệu ${id} vào cuối ngày ${date.toISOString()}:`, result);
+      }
+
+      const totalKwhPerDay = resultData.map(item => (item !== null ? item.Total_kWh : null));
+
+      const labelTime: (string | null)[] = resultData.map((item) => {
+        if (item !== null) {
+            const date = new Date(item.Time);
+            console.log("date", date);
+            const formattedDate = date.toISOString().split('T')[0];
+            return formattedDate;
+        } else {
+            return null;
+        }
+      });
+
+      // const labelTime = [];
+      console.log("labelTime", labelTime);
+
+      const query = {
+        IdDevice: id,
+        Time: {
+            $lte: lastStartDay,
+          },
+        };
+
+      const dataBefore = await ElectricsModel.findOne(query)
+                                                            .sort({ Time: -1 })
+                                                            .lean()
+                                                            .exec();
+      
+
+      
+
+      let kWhData = [];
+      let lastValue = 0;
+      if ( dataBefore !== null ) {
+        lastValue = dataBefore.Total_kWh;
+      }
+      
+  
+      // const kWhArr = totalKwhPerDay.map(item => (item !== null ? item.Total_kWh : null));
+
+      for (let i = 0; i < totalKwhPerDay.length; i++) {
+        if (totalKwhPerDay[i] === null) {
+          kWhData.push(null);
+        } else {
+          let result = totalKwhPerDay[i] - lastValue;
+          // Trường hợp thay đồng hồ khác có chỉ số nhỏ hơn chỉ số cũ, nếu ngày đó thay đồng hồ thì chấp nhận mất dữ liệu của ngày đó
+          if (result < 0) {
+            kWhData.push(null);
+            lastValue = totalKwhPerDay[i];
+          } else {
+            kWhData.push(result);
+            lastValue = totalKwhPerDay[i];
+          }
+        }
+      }
+
+      const totalkWhTime = kWhData.reduce((acc, curr) => acc + curr, 0);
+
+      const data = {
+        totalkWhTime: totalkWhTime,
+        labelTime: labelTime,
+        kWhData: kWhData,
+        totalKwhPerDay: totalKwhPerDay,
+        dataBefore: dataBefore,
+        rawData: resultData,
+      }
+      
+      
+      return HttpResponse.returnSuccessResponse(res, data);
     } catch (e) {
       next(e);
     }
